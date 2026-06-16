@@ -48,7 +48,7 @@
         <span class="badge live">LIVE</span>
       </div>
       <p>Every subscription, one screen. See your true monthly burn and catch renewals before they bite. No bank login — your data never leaves your device.</p>
-      <p class="go">open trickle &rarr;</p>
+      <p class="go">open trickle <span class="arw" aria-hidden="true">&rarr;</span></p>
     </a>
 
     <a class="card" href="https://nicoowg.github.io/drift/">
@@ -62,7 +62,7 @@
         <span class="badge live">LIVE</span>
       </div>
       <p>One-button neon arcade. Your spark orbits the core — tap to flip and hop rings, dodge the debris, chain near-misses. One thumb, one more try.</p>
-      <p class="go">play DRIFT &rarr;</p>
+      <p class="go">play DRIFT <span class="arw" aria-hidden="true">&rarr;</span></p>
     </a>
 
     <div class="card dimmed">
@@ -94,5 +94,12 @@
   </footer>
 
 </div>
+
+<script>
+  /* fire the eased, staggered entrance once layout is ready */
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){ document.body.classList.add("ready"); });
+  });
+</script>
 </body>
 </html>

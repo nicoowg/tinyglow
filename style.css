@@ -6,6 +6,16 @@
   --text:#e8edf4; --dim:#8a96a8; --line:#232c3a;
   --accent:#7fd4b8; --accent2:#5aa3e8; --warm:#e8c98a;
   --radius:18px;
+  /* real easing curves — never linear */
+  --ease-out:cubic-bezier(.16,1,.3,1);        /* expo-out, entrances */
+  --ease-spring:cubic-bezier(.34,1.56,.64,1);  /* overshoot, presses */
+  --ease-soft:cubic-bezier(.4,0,.2,1);         /* material standard */
+  /* fluid type scale — clamps so it breathes from phone to desktop */
+  --fs-meta:clamp(12px,2.6vw,13px);
+  --fs-body:clamp(14px,3.4vw,15px);
+  --fs-emph:clamp(16px,4vw,17px);
+  --fs-name:clamp(17px,4.6vw,19px);
+  --fs-hero:clamp(30px,9vw,40px);
 }
 
 *{margin:0;padding:0;box-sizing:border-box}
@@ -26,20 +36,47 @@ body{
 
 .wrap{
   width:100%;max-width:560px;display:flex;flex-direction:column;gap:28px;
-  animation:rise .7s ease-out both;
 }
-@keyframes rise{
-  from{opacity:0;transform:translateY(10px)}
-  to{opacity:1;transform:none}
+
+/* every major block enters on its own eased, staggered curve.
+   gated behind body.ready so the stagger fires together after load. */
+.hero,.hello,.promise,.shelf-label,.shelf .card,.note,footer{
+  opacity:0;transform:translateY(14px);
+  will-change:transform,opacity;
 }
-@media (prefers-reduced-motion: reduce){.wrap{animation:none}}
+body.ready .hero,
+body.ready .hello,
+body.ready .promise,
+body.ready .shelf-label,
+body.ready .shelf .card,
+body.ready .note,
+body.ready footer{
+  opacity:1;transform:none;
+  transition:opacity .7s var(--ease-out), transform .7s var(--ease-out);
+  transition-delay:var(--d,0ms);
+}
+/* block stagger (60–90ms cadence) */
+body.ready .hero{--d:0ms}
+body.ready .hello{--d:80ms}
+body.ready .promise{--d:160ms}
+body.ready .shelf-label{--d:240ms}
+body.ready .shelf .card:nth-child(1){--d:320ms}
+body.ready .shelf .card:nth-child(2){--d:400ms}
+body.ready .shelf .card:nth-child(3){--d:480ms}
+body.ready .note{--d:560ms}
+body.ready footer{--d:640ms}
 
 /* hero */
 .hero{text-align:center;padding:36px 8px 8px}
 .glow-dot{
   width:54px;height:54px;margin:0 auto 18px;border-radius:50%;
   background:radial-gradient(circle, var(--accent) 0%, rgba(127,212,184,.35) 45%, transparent 70%);
-  animation:breathe 4s ease-in-out infinite;
+  /* layered glow rather than one flat radial — soft inner core + wide bloom */
+  box-shadow:
+    0 0 14px 2px rgba(127,212,184,.30),
+    0 0 40px 8px rgba(127,212,184,.14),
+    0 0 70px 20px rgba(90,163,232,.08);
+  animation:breathe 4s var(--ease-soft) infinite;
 }
 @keyframes breathe{
   0%,100%{transform:scale(1);opacity:.85}
@@ -47,13 +84,27 @@ body{
 }
 @media (prefers-reduced-motion: reduce){.glow-dot{animation:none}}
 
-h1{font-size:34px;font-weight:700;letter-spacing:.5px}
-h1 .glow{color:var(--accent);text-shadow:0 0 22px rgba(127,212,184,.45)}
-.tagline{margin-top:8px;font-size:17px;color:var(--dim)}
+/* the name keeps a slow eased sheen across the glow word
+   (clip is used so the gradient rides only the text; color falls back
+   to --accent on the rare engine without background-clip support). */
+h1{font-size:var(--fs-hero);font-weight:700;letter-spacing:.5px;line-height:1.1}
+h1 .glow{
+  color:var(--accent);text-shadow:0 0 22px rgba(127,212,184,.45);
+  background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent));
+  background-size:200% 100%;
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+  animation:sheen 6s var(--ease-soft) infinite;
+}
+@supports not ((-webkit-background-clip:text) or (background-clip:text)){
+  h1 .glow{-webkit-text-fill-color:var(--accent);animation:none}
+}
+@keyframes sheen{0%,100%{background-position:0% 0}50%{background-position:100% 0}}
+.tagline{margin-top:8px;font-size:var(--fs-emph);color:var(--dim)}
 
 /* a human hello */
 .hello{
-  text-align:center;font-size:14.5px;color:var(--dim);
+  text-align:center;font-size:var(--fs-body);color:var(--dim);
   line-height:1.7;padding:0 6px;max-width:42ch;margin:0 auto;
 }
 
@@ -63,9 +114,34 @@ h1 .glow{color:var(--accent);text-shadow:0 0 22px rgba(127,212,184,.45)}
 }
 .promise span{
   background:var(--card);border:1px solid var(--line);border-radius:999px;
-  padding:7px 14px;font-size:13px;color:var(--dim);white-space:nowrap;
+  padding:7px 14px;font-size:var(--fs-meta);color:var(--dim);white-space:nowrap;
+  transition:transform .3s var(--ease-spring),
+             border-color .25s var(--ease-soft),
+             box-shadow .25s var(--ease-soft);
+}
+.promise span:hover{
+  transform:translateY(-2px);border-color:var(--warm);
+  box-shadow:0 6px 16px -10px rgba(232,201,138,.4);
 }
 .promise span b{color:var(--accent);font-weight:600}
+
+/* finer per-pill stagger riding on top of the block entrance.
+   keep transform/border/shadow eased so hover still feels alive after entry. */
+.promise span{opacity:0;transform:translateY(8px)}
+body.ready .promise span{
+  opacity:1;transform:none;
+  transition:opacity .5s var(--ease-out),
+             transform .3s var(--ease-spring),
+             border-color .25s var(--ease-soft),
+             box-shadow .25s var(--ease-soft);
+}
+body.ready .promise span:nth-child(1){transition-delay:200ms}
+body.ready .promise span:nth-child(2){transition-delay:250ms}
+body.ready .promise span:nth-child(3){transition-delay:300ms}
+body.ready .promise span:nth-child(4){transition-delay:350ms}
+body.ready .promise span:nth-child(5){transition-delay:400ms}
+/* once landed, hover must respond instantly — drop the entrance delay */
+body.ready .promise span:hover{transition-delay:0ms}
 
 /* shelf */
 .shelf-label{
@@ -77,14 +153,32 @@ h1 .glow{color:var(--accent);text-shadow:0 0 22px rgba(127,212,184,.45)}
 .card{
   display:block;background:var(--card);border:1px solid var(--line);
   border-radius:var(--radius);padding:20px;text-decoration:none;color:var(--text);
-  transition:transform .12s ease, border-color .12s ease;
+  transition:transform .35s var(--ease-out),
+             border-color .25s var(--ease-soft),
+             box-shadow .35s var(--ease-out);
 }
-a.card:hover{transform:translateY(-2px);border-color:#2e3a4c}
-a.card:active{transform:scale(.985)}
+a.card:hover{
+  transform:translateY(-3px);border-color:#3a4a5e;
+  box-shadow:0 10px 28px -12px rgba(127,212,184,.30);
+}
+a.card:active{transform:scale(.97);transition-timing-function:var(--ease-spring)}
+a.card:focus-visible{
+  outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(127,212,184,.35);
+  transition:box-shadow .25s var(--ease-out), border-color .25s var(--ease-soft);
+}
 
 .card-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-.card-icon{width:38px;height:38px;border-radius:10px;flex:none}
-.card-name{font-size:18px;font-weight:700;letter-spacing:.3px}
+/* soft eased pop-in on the icons once the deck has landed */
+.card-icon{
+  width:38px;height:38px;border-radius:10px;flex:none;
+  opacity:0;transform:scale(.82);
+}
+body.ready .shelf .card:nth-child(1) .card-icon{transition:opacity .55s var(--ease-out) .42s, transform .55s var(--ease-spring) .42s}
+body.ready .shelf .card:nth-child(2) .card-icon{transition:opacity .55s var(--ease-out) .50s, transform .55s var(--ease-spring) .50s}
+body.ready .shelf .card:nth-child(3) .card-icon{transition:opacity .55s var(--ease-out) .58s, transform .55s var(--ease-spring) .58s}
+body.ready .shelf .card .card-icon{opacity:1;transform:none}
+.card-name{font-size:var(--fs-name);font-weight:700;letter-spacing:.3px}
 .card-name span{color:var(--accent)}
 
 .badge{
@@ -95,13 +189,25 @@ a.card:active{transform:scale(.985)}
 .badge.today{background:#1a2a3f;color:var(--accent2);border:1px solid #27405e}
 .badge.soon{background:var(--card2);color:var(--dim);border:1px solid var(--line)}
 
-.card p{font-size:14px;color:var(--dim)}
-.card .go{margin-top:10px;font-size:13px;color:var(--accent);font-weight:600}
-.card.dimmed{opacity:.75}
+.card p{font-size:var(--fs-body);color:var(--dim);line-height:1.55}
+.card .go{margin-top:10px;font-size:var(--fs-meta);color:var(--accent);font-weight:600}
+/* the arrow nudges right on hover/focus, eased */
+.card .go .arw{
+  display:inline-block;
+  transition:transform .3s var(--ease-out);
+}
+a.card:hover .go .arw,
+a.card:focus-visible .go .arw{transform:translateX(4px)}
+
+/* the dormant card breathes faintly — present but clearly not yet open.
+   no hover-lift (it's a div, not a link), so it reads as "still cooking". */
+.card.dimmed{opacity:.7;animation:dormant 5s var(--ease-soft) infinite}
+@keyframes dormant{0%,100%{opacity:.62}50%{opacity:.78}}
+@media (prefers-reduced-motion: reduce){.card.dimmed{animation:none;opacity:.7}}
 
 /* studio note */
 .note{
-  text-align:center;font-size:14px;color:var(--dim);
+  text-align:center;font-size:var(--fs-body);color:var(--dim);
   padding:0 12px;line-height:1.7;
 }
 .note b{color:var(--text);font-weight:600}
@@ -113,3 +219,19 @@ footer{
   border-top:1px solid var(--line);padding-top:22px;line-height:1.8;
 }
 footer .heart{color:var(--accent)}
+
+/* honor the system: kill all big motion for those who ask.
+   the page stays fully visible and usable with motion off. */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.001ms!important;
+    scroll-behavior:auto!important;
+  }
+  .hero,.hello,.promise,.promise span,.shelf-label,
+  .shelf .card,.note,footer,.card-icon{
+    opacity:1!important;transform:none!important;
+  }
+  .card.dimmed{opacity:.7!important}
+}
